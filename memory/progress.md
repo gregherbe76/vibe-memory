@@ -14,6 +14,8 @@ Nothing. v0.2.0 polish session completed.
 
 ## Completed (last 10)
 
+- 2026-05-19 — Lovable self-assessment response: lovable.md mem:// positioning, tiered reading in protocol, --check-freshness flag, README caveat
+- 2026-05-19 — Added lovable.md entry point
 - 2026-05-19 — Added AGENTS.md, CONTRIBUTING.md, CHANGELOG.md, protocol version header
 - 2026-05-19 — Added install.sh, .pre-commit-hooks.yaml, JSON schemas, examples/{web-app,cli,library}
 - 2026-05-19 — Added GitHub Actions CI workflow, 16 validator tests, README badges

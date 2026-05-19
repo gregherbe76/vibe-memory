@@ -47,17 +47,24 @@ def write_memory(
 
 class ValidateTests(unittest.TestCase):
     def _run(self, **kw):
+        check_freshness_days = kw.pop("check_freshness_days", None)
+        today = kw.pop("today", None)
         with TemporaryDirectory() as d:
             mem = write_memory(Path(d), **kw)
-            return validate.validate(mem)
+            return validate.validate(
+                mem,
+                check_freshness_days=check_freshness_days,
+                today=today,
+            )
 
     def test_empty_memory_is_valid(self):
-        code, errors, decisions, drifts = self._run()
+        code, errors, warnings, decisions, drifts = self._run()
         self.assertEqual(code, 0, errors)
         self.assertEqual((decisions, drifts), (0, 0))
+        self.assertEqual(warnings, [])
 
     def test_one_good_decision_and_drift(self):
-        code, errors, d, dr = self._run(decisions=VALID_DECISION + "\n", drift=VALID_DRIFT + "\n")
+        code, errors, _w, d, dr = self._run(decisions=VALID_DECISION + "\n", drift=VALID_DRIFT + "\n")
         self.assertEqual(code, 0, errors)
         self.assertEqual((d, dr), (1, 1))
 
@@ -115,7 +122,7 @@ class ValidateTests(unittest.TestCase):
             '{"timestamp":"2026-05-19T00:00:00Z","type":"archive",'
             '"range":"2026-01..2026-04","summary_file":"decisions-archive-2026-05.md","count":200}'
         )
-        code, errors, d, _ = self._run(decisions=archive + "\n")
+        code, errors, _w, d, _ = self._run(decisions=archive + "\n")
         self.assertEqual(code, 0, errors)
         self.assertEqual(d, 1)
 
@@ -132,9 +139,48 @@ class ValidateTests(unittest.TestCase):
         self.assertTrue(any("type must be 'drift'" in e for e in errors))
 
     def test_blank_lines_are_ignored(self):
-        code, errors, d, _ = self._run(decisions=f"\n{VALID_DECISION}\n\n")
+        code, errors, _w, d, _ = self._run(decisions=f"\n{VALID_DECISION}\n\n")
         self.assertEqual(code, 0, errors)
         self.assertEqual(d, 1)
+
+    def test_freshness_off_by_default(self):
+        # Stale "Last updated" should not produce a warning when check_freshness_days is None.
+        stale = "# progress\nLast updated: 2020-01-01\n"
+        _, _, warnings, *_ = self._run(progress=stale)
+        self.assertEqual(warnings, [])
+
+    def test_freshness_warns_when_stale(self):
+        stale_arch = "# arch\nLast updated: 2026-01-01\n"
+        stale_prog = "# progress\nLast updated: 2026-01-01\n"
+        import datetime as _dt
+        code, errors, warnings, *_ = self._run(
+            arch=stale_arch,
+            progress=stale_prog,
+            check_freshness_days=30,
+            today=_dt.date(2026, 5, 19),
+        )
+        self.assertEqual(code, 0, errors)
+        self.assertEqual(len(warnings), 2)
+        self.assertTrue(all("Last updated" in w for w in warnings))
+
+    def test_freshness_ok_when_recent(self):
+        import datetime as _dt
+        recent_arch = "# arch\nLast updated: 2026-05-10\n"
+        recent_prog = "# progress\nLast updated: 2026-05-10\n"
+        _, _, warnings, *_ = self._run(
+            arch=recent_arch,
+            progress=recent_prog,
+            check_freshness_days=30,
+            today=_dt.date(2026, 5, 19),
+        )
+        self.assertEqual(warnings, [])
+
+    def test_freshness_missing_last_updated_warns(self):
+        _, _, warnings, *_ = self._run(
+            progress="# progress\n(no date line)\n",
+            check_freshness_days=30,
+        )
+        self.assertTrue(any("no 'Last updated" in w for w in warnings))
 
     def test_cli_help(self):
         with self.assertRaises(SystemExit) as cm:

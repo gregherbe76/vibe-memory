@@ -16,6 +16,7 @@ Output the confirmation line specified in section 10 of the protocol.
 
 ## Lovable-specific rules
 
+- Relationship to `mem://` — Lovable injects its own native memory (`mem://`) into every prompt. Treat `mem://` as a cache. The files in `memory/` are the durable, portable source of truth (same files work on Replit, Claude Code, Cursor, etc.). On conflict, `memory/` wins; re-populate `mem://` from the files, not the other way around.
 - Memory compression — Lovable may summarize older parts of the conversation history when context grows. The `memory/` folder is your durable record. When in doubt about prior decisions, the JSONL logs are authoritative, not your in-context recollection.
 - Reconstruction from code — Lovable typically infers conventions from the existing codebase. When inferred conventions conflict with an entry in `decisions.jsonl`, the logged decision wins. Append a drift entry describing the conflict so the human can adjudicate.
 - Stack and conventions — These live in `memory/architecture.md`. Treat that file as the single source of truth for stack choices (e.g. "React 18 + Vite", "Express + TypeScript", "Postgres + Drizzle", "Tailwind + shadcn"). Do not silently swap one for another.

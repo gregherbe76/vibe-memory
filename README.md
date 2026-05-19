@@ -12,6 +12,22 @@ Works with Replit Agent, Claude Code, Lovable, Cursor, Aider, Codex, OpenHands, 
 
 The agent reads `MEMORY_PROTOCOL.md` and an entry-point file for its runtime (`replit.md`, `CLAUDE.md`, `lovable.md`, or `AGENTS.md`) at the start of every session. It logs decisions, detects drift, tracks progress. No CLI, no package, no MCP. Just files.
 
+## When is this worth it?
+
+vibe-memory pays off when **time** and **architectural change** stack up. Use it for:
+
+- ✅ Projects expected to live more than a month, with multiple sessions
+- ✅ Multiple agents (or multiple humans) working on the same project
+- ✅ Architecture that evolves: refactors, schema migrations, dependency swaps
+
+Skip it for:
+
+- ❌ Weekend prototype or throwaway MVP
+- ❌ A 1–2 page static site
+- ❌ Anything where the whole project fits in one prompt
+
+If two weeks in your `memory/` files don't reflect reality, you've over-applied the protocol. Simplify (drop drift logging, keep only `architecture.md`) or fall back to your agent's native memory. The validator's `--check-freshness DAYS` flag warns when `progress.md` / `architecture.md` go stale.
+
 ## Quickstart
 
 One-line install into the current directory:

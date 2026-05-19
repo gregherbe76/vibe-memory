@@ -12,10 +12,17 @@ At the start of every session, BEFORE writing or modifying any code, you MUST re
 
 1. `memory/architecture.md` — the current state of the system
 2. `memory/progress.md` — what is done, what is in flight, what is next
+
+These two are always required. They are small, current-state files; the cost is negligible.
+
+For sessions that touch architecture, dependencies, schemas, conventions, or any change spanning more than one file, also read:
+
 3. The last 20 entries of `memory/decisions.jsonl` — recent architectural decisions
 4. The last 10 entries of `memory/drift.jsonl` — recent detected drifts
 
-If any of these files is missing, create it empty with the structure defined in `memory/README.md`. Do not skip this step.
+For trivial sessions (typo fix, copy change, isolated CSS tweak, single-line bug fix), you may skip steps 3 and 4. You still emit the section 10 confirmation line in the form that reflects what you read.
+
+If any of these files is missing, create it empty with the structure defined in `memory/README.md`. Do not skip step 1 or 2.
 
 ## 2. Decisions are append-only events
 
@@ -96,8 +103,12 @@ If a memory file is corrupted (unparseable JSON, malformed markdown), stop. Repo
 
 ## 10. Confirm at session start
 
-At the start of each session, after reading the memory files, output exactly one line confirming you have done so:
+At the start of each session, after reading the memory files, output exactly one line confirming you have done so. Use the variant that matches what you actually read:
 
+Full read:
 [memory] read architecture, progress, last 20 decisions, last 10 drifts.
 
-If you cannot output this line truthfully, you have not followed the protocol. Go back to step 1.
+Trivial-session read (only steps 1 and 2):
+[memory] read architecture, progress (trivial session, skipped decisions/drift tails).
+
+If you cannot output one of these lines truthfully, you have not followed the protocol. Go back to step 1.

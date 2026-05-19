@@ -12,12 +12,14 @@ Exit code: 0 on success, 1 on any failure. Prints a summary either way.
 from __future__ import annotations
 
 import argparse
+import datetime
 import json
 import re
 import sys
 from pathlib import Path
 
 DEFAULT_MEM = Path(__file__).resolve().parent.parent / "memory"
+LAST_UPDATED_RE = re.compile(r"^Last updated:\s*(\d{4}-\d{2}-\d{2})", re.MULTILINE)
 
 ISO8601 = re.compile(
     r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:?\d{2})$"
@@ -114,15 +116,54 @@ def check_drift(path: Path, errors: list[str], base: Path) -> int:
     return count
 
 
-def validate(mem: Path) -> tuple[int, list[str], int, int]:
-    """Validate a memory/ directory. Returns (exit_code, errors, decisions, drifts)."""
+def check_freshness(
+    mem: Path,
+    max_days: int,
+    warnings: list[str],
+    base: Path,
+    today: datetime.date | None = None,
+) -> None:
+    today = today or datetime.date.today()
+    for name in ("progress.md", "architecture.md"):
+        path = mem / name
+        if not path.exists():
+            continue
+        m = LAST_UPDATED_RE.search(path.read_text(encoding="utf-8"))
+        if not m:
+            warnings.append(f"{_rel(path, base)}: no 'Last updated: YYYY-MM-DD' line")
+            continue
+        try:
+            last = datetime.date.fromisoformat(m.group(1))
+        except ValueError:
+            warnings.append(f"{_rel(path, base)}: 'Last updated' is not a valid date")
+            continue
+        age = (today - last).days
+        if age > max_days:
+            warnings.append(
+                f"{_rel(path, base)}: 'Last updated' is {age} days old (> {max_days})"
+            )
+
+
+def validate(
+    mem: Path,
+    check_freshness_days: int | None = None,
+    today: datetime.date | None = None,
+) -> tuple[int, list[str], list[str], int, int]:
+    """Validate a memory/ directory.
+
+    Returns (exit_code, errors, warnings, decisions, drifts).
+    Warnings do not affect exit_code; they are soft pressure for human review.
+    """
     base = mem.parent
     errors: list[str] = []
+    warnings: list[str] = []
     check_markdown(mem / "architecture.md", 200, errors, base)
     check_markdown(mem / "progress.md", 100, errors, base)
     decisions = check_decisions(mem / "decisions.jsonl", errors, base)
     drifts = check_drift(mem / "drift.jsonl", errors, base)
-    return (1 if errors else 0, errors, decisions, drifts)
+    if check_freshness_days is not None:
+        check_freshness(mem, check_freshness_days, warnings, base, today=today)
+    return (1 if errors else 0, errors, warnings, decisions, drifts)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -133,16 +174,30 @@ def main(argv: list[str] | None = None) -> int:
         default=str(DEFAULT_MEM),
         help="Path to memory/ directory (default: ./memory next to this script)",
     )
+    parser.add_argument(
+        "--check-freshness",
+        type=int,
+        metavar="DAYS",
+        default=None,
+        help="Warn (do not fail) if progress.md or architecture.md 'Last updated' is older than DAYS days",
+    )
     args = parser.parse_args(argv)
 
-    code, errors, decisions, drifts = validate(Path(args.memory_dir))
+    code, errors, warnings, decisions, drifts = validate(
+        Path(args.memory_dir),
+        check_freshness_days=args.check_freshness,
+    )
     if code != 0:
         print(f"[validate] FAIL ({len(errors)} issue(s))")
         for e in errors:
             print(f"  - {e}")
-        return code
-    print(f"[validate] OK — {decisions} decision(s), {drifts} drift(s)")
-    return 0
+    else:
+        print(f"[validate] OK — {decisions} decision(s), {drifts} drift(s)")
+    if warnings:
+        print(f"[validate] {len(warnings)} warning(s):")
+        for w in warnings:
+            print(f"  - {w}")
+    return code
 
 
 if __name__ == "__main__":
