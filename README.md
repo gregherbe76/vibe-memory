@@ -14,6 +14,12 @@ Works with Replit Agent, Claude Code, Lovable, Cursor, Aider, Codex, OpenHands, 
 
 You decided to drop Prisma a month ago. Today the agent is about to re-add it. With vibe-memory, this happens **before** the import goes in:
 
+<p align="center">
+  <video src="https://github.com/gregherbe76/vibe-memory/raw/main/assets/anti-drift-demo.mp4" controls width="720" muted></video>
+</p>
+
+If your renderer doesn't play the video inline (GitHub mobile, some markdown viewers), [watch it here](assets/anti-drift-demo.mp4). The fallback text version:
+
 ```
 ⚠️  Conflicting decision detected
     2026-03-12 — dependency: dropped Prisma in favor of Drizzle
