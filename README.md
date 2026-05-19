@@ -2,7 +2,7 @@
 
 [![validate](https://github.com/gregherbe76/vibe-memory/actions/workflows/validate.yml/badge.svg)](https://github.com/gregherbe76/vibe-memory/actions/workflows/validate.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Protocol version](https://img.shields.io/badge/protocol-v0.2.0-informational)](MEMORY_PROTOCOL.md)
+[![Protocol version](https://img.shields.io/badge/protocol-v0.3.0-informational)](MEMORY_PROTOCOL.md)
 
 A memory protocol for vibe coding agents. Persistent memory for coding agents — across sessions, across agents, across months.
 
@@ -30,7 +30,21 @@ If two weeks in your `memory/` files don't reflect reality, you've over-applied 
 
 ## Quickstart
 
-One-line install into the current directory:
+Two modes. Pick one:
+
+### Mono-file mode (recommended for solo / weekend / MVP)
+
+A single `vibememory.md` file that contains the lite protocol AND your memory:
+
+```sh
+curl -sSL https://raw.githubusercontent.com/gregherbe76/vibe-memory/main/install.sh | bash -s -- --mode mono
+```
+
+You get one file to edit. The agent reads it top-to-bottom at session start, appends to the tables at the bottom as it works. No validator, no CI, no JSON. Upgrade to full mode if the project grows.
+
+### Full mode (multi-agent, multi-runtime, CI-validated)
+
+The full protocol with separate `architecture.md`, `progress.md`, append-only JSONL logs, validator, schemas, and optional hooks:
 
 ```sh
 curl -sSL https://raw.githubusercontent.com/gregherbe76/vibe-memory/main/install.sh | bash
@@ -39,12 +53,12 @@ curl -sSL https://raw.githubusercontent.com/gregherbe76/vibe-memory/main/install
 Or pin to a release:
 
 ```sh
-curl -sSL https://raw.githubusercontent.com/gregherbe76/vibe-memory/main/install.sh | bash -s -- --ref v0.2.0
+curl -sSL https://raw.githubusercontent.com/gregherbe76/vibe-memory/main/install.sh | bash -s -- --ref v0.3.0
 ```
 
 The installer drops the protocol files, entry points, validator, a blank `memory/` folder, and the optional Claude Code SessionStart hook. It never overwrites existing files.
 
-Then start a session — the agent reads `MEMORY_PROTOCOL.md`, follows the rules, and emits the confirmation line from section 10.
+Then start a session — the agent reads `MEMORY_PROTOCOL.md`, follows the rules, and emits the section 10 confirmation recap.
 
 ### Manual install
 
@@ -68,7 +82,8 @@ python3 scripts/validate.py
 - `MEMORY_PROTOCOL.md` — the rules the agent follows (versioned, semver)
 - `replit.md`, `CLAUDE.md`, `lovable.md`, `AGENTS.md` — runtime-specific entry points
 - `memory/` — this repo's own memory; self-describes vibe-memory
-- `template/memory/` — blank starter files for new projects
+- `template/memory/` — blank starter files for new projects (full mode)
+- `template/vibememory.md` — single-file starter (mono mode)
 - `examples/` — three worked memory states (web app, CLI, library)
 - `scripts/validate.py` — Python 3 stdlib validator
 - `scripts/render.py` — render `decisions.jsonl` + `drift.jsonl` into a human-readable markdown journal

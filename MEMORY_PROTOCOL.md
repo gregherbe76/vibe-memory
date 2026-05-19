@@ -1,6 +1,6 @@
 # Memory Protocol
 
-Protocol version: 0.2.0
+Protocol version: 0.3.0
 
 You are a coding agent working on a long-lived project. Your context window is short. The project is not. This protocol gives you a persistent memory so you do not forget, drift, or rewrite what already exists.
 
@@ -60,7 +60,20 @@ Sections required:
 - External dependencies — APIs, databases, services
 - Conventions — naming, file structure, testing, error handling
 
-## 4. Drift detection is mandatory
+## 4. Anti-drift in real time (BEFORE the change)
+
+You MUST NOT silently override a logged decision. Before writing or modifying code that would contradict any entry in the last 50 decisions, STOP and:
+
+1. Quote the conflicting decision in your reply (timestamp, change, reason).
+2. Ask the user to confirm the reversal explicitly.
+3. If the user confirms, append a `type: "rollback"` entry referencing the original timestamp BEFORE making the change.
+4. If the user declines, do not make the change.
+
+A "contradiction" means: re-adding a dependency that was removed, re-introducing a pattern that was rejected, swapping a stack choice that was logged, breaking a convention listed in `architecture.md`, or any action that reverses a `decision`, `constraint`, `convention`, or `dependency` entry. Touching unrelated areas is not a contradiction.
+
+This is the most visible value of the protocol to the user. Skipping it defeats the purpose.
+
+## 4.5. Drift detection (AFTER the change)
 
 Before you finish any task, run a drift check. Compare what you just did against memory/architecture.md and the last 10 decisions. If you detect any of the following, append an entry to memory/drift.jsonl:
 
@@ -114,14 +127,46 @@ If this protocol conflicts with a user instruction, follow the user. Then log th
 
 If a memory file is corrupted (unparseable JSON, malformed markdown), stop. Report it to the user. Do not attempt automatic repair.
 
-## 10. Confirm at session start
+## 10. Confirm at session start (with recap)
 
-At the start of each session, after reading the memory files, output exactly one line confirming you have done so. Use the variant that matches what you actually read:
+Your first reply in any non-trivial session MUST include a 3-line memory recap. This makes the protocol visible to the user — they see that the agent is reading and using the memory, which is the difference between "trust the agent" and "see the agent working".
 
-Full read:
+Format (exactly 3 lines, no more):
+
+```
 [memory] read architecture, progress, last 20 decisions, last 10 drifts.
+Stack: <2-3 key stack/convention items from architecture.md>
+In flight: <top in-progress item from progress.md>. Open drift: <most recent unresolved drift, or "none">.
+```
 
-Trivial-session read (only steps 1 and 2):
+Example:
+
+```
+[memory] read architecture, progress, last 20 decisions, last 10 drifts.
+Stack: Next.js 15 + Drizzle on Neon + Tailwind/shadcn. Convention: all DB writes through lib/db/.
+In flight: checkout v2 (Stripe Elements). Open drift: inline Drizzle in app/(app)/billing/page.tsx.
+```
+
+For trivial sessions (typo fix, copy change), use this shorter variant:
+
+```
 [memory] read architecture, progress (trivial session, skipped decisions/drift tails).
+```
 
-If you cannot output one of these lines truthfully, you have not followed the protocol. Go back to step 1.
+If you cannot output one of these recaps truthfully, you have not followed the protocol. Go back to step 1.
+
+## 11. Recap before stopping (session-end summary)
+
+Before ending a session — when handing back to the user, before going idle, or before any acknowledged stopping point — surface a 3 to 5 line recap so the user can pick up later without scrolling:
+
+```
+[session end]
+- Changed: <files touched this session, grouped>
+- Logged: <decisions appended (count + brief), drifts noted (count + brief)>
+- Next: <top item from progress.md "Next">
+- Open question: <anything blocking, or "none">
+```
+
+This is the moment the user is most likely to come back later. The recap is what they will see when they reopen the session, more than the code diff. Skipping it forces them to scroll the whole conversation to remember where things stood.
+
+If the session was trivial and nothing material changed, you may skip the end-of-session recap. Use judgment, the same as for memory updates.

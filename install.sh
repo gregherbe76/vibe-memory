@@ -13,11 +13,13 @@ set -euo pipefail
 
 REF="main"
 REPO="gregherbe76/vibe-memory"
+MODE="full"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --ref) REF="$2"; shift 2 ;;
     --repo) REPO="$2"; shift 2 ;;
+    --mode) MODE="$2"; shift 2 ;;
     -h|--help)
       sed -n '2,12p' "$0" | sed 's/^# \{0,1\}//'
       exit 0
@@ -25,6 +27,11 @@ while [[ $# -gt 0 ]]; do
     *) echo "unknown arg: $1" >&2; exit 2 ;;
   esac
 done
+
+case "$MODE" in
+  full|mono) ;;
+  *) echo "unknown --mode: $MODE (expected: full, mono)" >&2; exit 2 ;;
+esac
 
 TARGET="${PWD}"
 TMP="$(mktemp -d)"
@@ -45,20 +52,30 @@ copy() {
   echo "[install] wrote ${dest}"
 }
 
+if [ "$MODE" = "mono" ]; then
+  copy "template/vibememory.md" "vibememory.md"
+  echo
+  echo "[install] done (mono mode)."
+  echo "[install] edit vibememory.md, then start a session — the agent reads the whole file."
+  exit 0
+fi
+
 copy "MEMORY_PROTOCOL.md"           "MEMORY_PROTOCOL.md"
 copy "replit.md"                    "replit.md"
 copy "CLAUDE.md"                    "CLAUDE.md"
 copy "lovable.md"                   "lovable.md"
 copy "AGENTS.md"                    "AGENTS.md"
 copy "scripts/validate.py"          "scripts/validate.py"
+copy "scripts/render.py"            "scripts/render.py"
 copy "schemas"                      "schemas"
 copy "template/memory"              "memory"
 copy ".claude/hooks/session-start.sh" ".claude/hooks/session-start.sh"
 copy ".claude/settings.json"        ".claude/settings.json"
 
 chmod +x "${TARGET}/scripts/validate.py" 2>/dev/null || true
+chmod +x "${TARGET}/scripts/render.py" 2>/dev/null || true
 chmod +x "${TARGET}/.claude/hooks/session-start.sh" 2>/dev/null || true
 
 echo
-echo "[install] done."
+echo "[install] done (full mode)."
 echo "[install] next: python3 scripts/validate.py"

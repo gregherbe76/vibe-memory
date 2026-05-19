@@ -1,7 +1,7 @@
 # Architecture
 
 Last updated: 2026-05-19
-Current version: 0.2.0
+Current version: 0.3.0
 
 ## Stack
 
@@ -9,7 +9,7 @@ No runtime stack. This repository is a documentation-and-convention template (Ma
 
 ## Components
 
-- `MEMORY_PROTOCOL.md` — the rules the agent follows every session; semver header
+- `MEMORY_PROTOCOL.md` — the rules the agent follows every session; semver header; sections include real-time anti-drift (4), session-start recap (10), session-end recap (11)
 - `replit.md` — Replit Agent entry point and overrides
 - `CLAUDE.md` — Claude Code entry point and overrides
 - `lovable.md` — Lovable entry point and overrides
@@ -24,6 +24,9 @@ No runtime stack. This repository is a documentation-and-convention template (Ma
 - `examples/` — three worked memory states (web app, CLI, library)
 - `scripts/validate.py` — Python 3 stdlib validator; supports `validate.py [memory_dir] [--check-freshness DAYS]`
 - `scripts/render.py` — renders JSONL logs into a chronological markdown journal (derived view; JSONL stays source of truth)
+- `scripts/pr_comment.py` — produces a markdown PR comment diffing memory between two refs
+- `template/vibememory.md` — single-file mono-mode starter (lite protocol + memory in one file)
+- `.github/workflows/memory-pr-comment.yml` — posts a sticky PR comment summarizing memory changes
 - `tests/test_validate.py` — 16-test unittest suite for the validator
 - `schemas/decision.schema.json` + `schemas/drift.schema.json` — JSON schemas for log entries
 - `.claude/settings.json` + `.claude/hooks/session-start.sh` — SessionStart hook for Claude Code on the web

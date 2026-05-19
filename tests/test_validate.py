@@ -188,6 +188,37 @@ class ValidateTests(unittest.TestCase):
         self.assertEqual(cm.exception.code, 0)
 
 
+class PrCommentTests(unittest.TestCase):
+    def _setup(self, tmp: Path, base_dec="", head_dec="", base_drift="", head_drift=""):
+        for sub, dec, dr in (("base", base_dec, base_drift), ("head", head_dec, head_drift)):
+            (tmp / sub / "memory").mkdir(parents=True)
+            (tmp / sub / "memory" / "decisions.jsonl").write_text(dec)
+            (tmp / sub / "memory" / "drift.jsonl").write_text(dr)
+        return tmp / "base", tmp / "head"
+
+    def test_no_changes(self):
+        import pr_comment  # noqa: WPS433
+        with TemporaryDirectory() as d:
+            base, head = self._setup(Path(d))
+            out = pr_comment.render_comment(base, head)
+        self.assertIn("No vibe-memory changes", out)
+
+    def test_new_decision_is_reported(self):
+        import pr_comment
+        with TemporaryDirectory() as d:
+            base, head = self._setup(Path(d), head_dec=VALID_DECISION + "\n")
+            out = pr_comment.render_comment(base, head)
+        self.assertIn("1 new decision", out)
+        self.assertIn("**decision**", out)
+
+    def test_new_drift_is_reported(self):
+        import pr_comment
+        with TemporaryDirectory() as d:
+            base, head = self._setup(Path(d), head_drift=VALID_DRIFT + "\n")
+            out = pr_comment.render_comment(base, head)
+        self.assertIn("1 new drift", out)
+
+
 class RenderTests(unittest.TestCase):
     def test_render_produces_markdown_with_decisions_and_drifts(self):
         import render  # noqa: WPS433
