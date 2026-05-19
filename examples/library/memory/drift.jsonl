@@ -1,0 +1,1 @@
+{"timestamp":"2026-05-02T16:20:00Z","type":"drift","severity":"high","detected":"flatcache/storage/file.py imports from flatcache._internal in public path; violates `_internal` privacy convention","location":"flatcache/storage/file.py:12","suggested_action":"copy the helper into the storage package or promote it to public API with tests"}

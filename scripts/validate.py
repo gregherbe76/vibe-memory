@@ -11,13 +11,13 @@ Exit code: 0 on success, 1 on any failure. Prints a summary either way.
 """
 from __future__ import annotations
 
+import argparse
 import json
 import re
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent
-MEM = ROOT / "memory"
+DEFAULT_MEM = Path(__file__).resolve().parent.parent / "memory"
 
 ISO8601 = re.compile(
     r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:?\d{2})$"
@@ -35,18 +35,25 @@ def fail(errors: list[str], msg: str) -> None:
     errors.append(msg)
 
 
-def check_markdown(path: Path, max_lines: int, errors: list[str]) -> None:
+def _rel(path: Path, base: Path) -> str:
+    try:
+        return str(path.relative_to(base))
+    except ValueError:
+        return str(path)
+
+
+def check_markdown(path: Path, max_lines: int, errors: list[str], base: Path) -> None:
     if not path.exists():
-        fail(errors, f"{path.relative_to(ROOT)}: missing")
+        fail(errors, f"{_rel(path, base)}: missing")
         return
     lines = path.read_text(encoding="utf-8").splitlines()
     if len(lines) > max_lines:
-        fail(errors, f"{path.relative_to(ROOT)}: {len(lines)} lines exceeds {max_lines}-line limit")
+        fail(errors, f"{_rel(path, base)}: {len(lines)} lines exceeds {max_lines}-line limit")
 
 
-def check_decisions(path: Path, errors: list[str]) -> int:
+def check_decisions(path: Path, errors: list[str], base: Path) -> int:
     if not path.exists():
-        fail(errors, f"{path.relative_to(ROOT)}: missing")
+        fail(errors, f"{_rel(path, base)}: missing")
         return 0
     count = 0
     for i, raw in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
@@ -56,29 +63,29 @@ def check_decisions(path: Path, errors: list[str]) -> int:
         try:
             obj = json.loads(raw)
         except json.JSONDecodeError as e:
-            fail(errors, f"{path.relative_to(ROOT)}:{i}: invalid JSON ({e.msg})")
+            fail(errors, f"{_rel(path, base)}:{i}: invalid JSON ({e.msg})")
             continue
         if not isinstance(obj, dict):
-            fail(errors, f"{path.relative_to(ROOT)}:{i}: must be JSON object")
+            fail(errors, f"{_rel(path, base)}:{i}: must be JSON object")
             continue
         t = obj.get("type")
         if t not in DECISION_TYPES:
-            fail(errors, f"{path.relative_to(ROOT)}:{i}: type {t!r} not in {sorted(DECISION_TYPES)}")
+            fail(errors, f"{_rel(path, base)}:{i}: type {t!r} not in {sorted(DECISION_TYPES)}")
         required = ARCHIVE_REQUIRED if t == "archive" else DECISION_REQUIRED
         missing = required - obj.keys()
         if missing:
-            fail(errors, f"{path.relative_to(ROOT)}:{i}: missing fields {sorted(missing)}")
+            fail(errors, f"{_rel(path, base)}:{i}: missing fields {sorted(missing)}")
         ts = obj.get("timestamp", "")
         if not ISO8601.match(ts):
-            fail(errors, f"{path.relative_to(ROOT)}:{i}: timestamp {ts!r} is not ISO-8601")
+            fail(errors, f"{_rel(path, base)}:{i}: timestamp {ts!r} is not ISO-8601")
         if t != "archive" and "impact" in obj and not isinstance(obj["impact"], list):
-            fail(errors, f"{path.relative_to(ROOT)}:{i}: impact must be a list")
+            fail(errors, f"{_rel(path, base)}:{i}: impact must be a list")
     return count
 
 
-def check_drift(path: Path, errors: list[str]) -> int:
+def check_drift(path: Path, errors: list[str], base: Path) -> int:
     if not path.exists():
-        fail(errors, f"{path.relative_to(ROOT)}: missing")
+        fail(errors, f"{_rel(path, base)}: missing")
         return 0
     count = 0
     for i, raw in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
@@ -88,38 +95,52 @@ def check_drift(path: Path, errors: list[str]) -> int:
         try:
             obj = json.loads(raw)
         except json.JSONDecodeError as e:
-            fail(errors, f"{path.relative_to(ROOT)}:{i}: invalid JSON ({e.msg})")
+            fail(errors, f"{_rel(path, base)}:{i}: invalid JSON ({e.msg})")
             continue
         if not isinstance(obj, dict):
-            fail(errors, f"{path.relative_to(ROOT)}:{i}: must be JSON object")
+            fail(errors, f"{_rel(path, base)}:{i}: must be JSON object")
             continue
         missing = DRIFT_REQUIRED - obj.keys()
         if missing:
-            fail(errors, f"{path.relative_to(ROOT)}:{i}: missing fields {sorted(missing)}")
+            fail(errors, f"{_rel(path, base)}:{i}: missing fields {sorted(missing)}")
         if obj.get("type") != "drift":
-            fail(errors, f"{path.relative_to(ROOT)}:{i}: type must be 'drift'")
+            fail(errors, f"{_rel(path, base)}:{i}: type must be 'drift'")
         sev = obj.get("severity")
         if sev not in DRIFT_SEVERITY:
-            fail(errors, f"{path.relative_to(ROOT)}:{i}: severity {sev!r} not in {sorted(DRIFT_SEVERITY)}")
+            fail(errors, f"{_rel(path, base)}:{i}: severity {sev!r} not in {sorted(DRIFT_SEVERITY)}")
         ts = obj.get("timestamp", "")
         if not ISO8601.match(ts):
-            fail(errors, f"{path.relative_to(ROOT)}:{i}: timestamp {ts!r} is not ISO-8601")
+            fail(errors, f"{_rel(path, base)}:{i}: timestamp {ts!r} is not ISO-8601")
     return count
 
 
-def main() -> int:
+def validate(mem: Path) -> tuple[int, list[str], int, int]:
+    """Validate a memory/ directory. Returns (exit_code, errors, decisions, drifts)."""
+    base = mem.parent
     errors: list[str] = []
-    check_markdown(MEM / "architecture.md", 200, errors)
-    check_markdown(MEM / "progress.md", 100, errors)
-    decisions = check_decisions(MEM / "decisions.jsonl", errors)
-    drifts = check_drift(MEM / "drift.jsonl", errors)
+    check_markdown(mem / "architecture.md", 200, errors, base)
+    check_markdown(mem / "progress.md", 100, errors, base)
+    decisions = check_decisions(mem / "decisions.jsonl", errors, base)
+    drifts = check_drift(mem / "drift.jsonl", errors, base)
+    return (1 if errors else 0, errors, decisions, drifts)
 
-    if errors:
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description="Validate vibe-memory files.")
+    parser.add_argument(
+        "memory_dir",
+        nargs="?",
+        default=str(DEFAULT_MEM),
+        help="Path to memory/ directory (default: ./memory next to this script)",
+    )
+    args = parser.parse_args(argv)
+
+    code, errors, decisions, drifts = validate(Path(args.memory_dir))
+    if code != 0:
         print(f"[validate] FAIL ({len(errors)} issue(s))")
         for e in errors:
             print(f"  - {e}")
-        return 1
-
+        return code
     print(f"[validate] OK — {decisions} decision(s), {drifts} drift(s)")
     return 0
 

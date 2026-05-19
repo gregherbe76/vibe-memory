@@ -1,0 +1,1 @@
+{"timestamp":"2026-04-30T11:42:00Z","type":"drift","severity":"low","detected":"direct reqwest::get call bypasses source::http_client() retry policy","location":"src/source/github.rs:88","suggested_action":"route through source::http_client()"}

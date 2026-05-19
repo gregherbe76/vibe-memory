@@ -4,19 +4,23 @@ Last updated: 2026-05-19
 
 ## In progress
 
-Nothing. Hardening session completed.
+Nothing. v0.2.0 polish session completed.
 
 ## Next
 
-1. Tag v0.2.0 and publish a release
-2. Add a pre-commit hook recipe (in addition to the Claude Code SessionStart hook)
-3. Add an `AGENTS.md` entry point for agent-agnostic tooling
+1. Tag v0.2.0 in git and publish a GitHub release
+2. Announce v0.2.0 on whatever channels the maintainer uses
+3. Gather user feedback on the install.sh flow
 
 ## Completed (last 10)
 
-- 2026-05-19 — Added LICENSE, CLAUDE.md, scripts/validate.py, .claude/ SessionStart hook, expanded README
+- 2026-05-19 — Added AGENTS.md, CONTRIBUTING.md, CHANGELOG.md, protocol version header
+- 2026-05-19 — Added install.sh, .pre-commit-hooks.yaml, JSON schemas, examples/{web-app,cli,library}
+- 2026-05-19 — Added GitHub Actions CI workflow, 16 validator tests, README badges
+- 2026-05-19 — Refactored validate.py to accept a memory_dir arg
+- 2026-05-19 — Added LICENSE, CLAUDE.md, scripts/validate.py, .claude/ SessionStart hook
 - 2026-05-19 — Reorganized: stub memory files moved to template/, root memory/ now self-describes
-- 2026-05-18 — Import session: explored repo, confirmed no runtime stack, populated architecture.md
+- 2026-05-18 — Import session: explored repo, confirmed no runtime stack
 - 2026-05-18 — Memory protocol installed
 
 ## Blocked

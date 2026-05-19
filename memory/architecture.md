@@ -9,32 +9,38 @@ No runtime stack. This repository is a documentation-and-convention template (Ma
 
 ## Components
 
-- `MEMORY_PROTOCOL.md` — the rules the agent follows every session
+- `MEMORY_PROTOCOL.md` — the rules the agent follows every session; semver header
 - `replit.md` — Replit Agent entry point and overrides
 - `CLAUDE.md` — Claude Code entry point and overrides
-- `README.md` — human-facing overview and quickstart
+- `AGENTS.md` — generic entry point for agent-agnostic tooling (Cursor, Aider, Codex, OpenHands)
+- `README.md` — human-facing overview, quickstart, badges
 - `LICENSE` — MIT
-- `memory/architecture.md` — current state of the system (this file)
-- `memory/progress.md` — in-flight, next, blocked
-- `memory/decisions.jsonl` — append-only decision log
-- `memory/drift.jsonl` — append-only drift log
-- `memory/README.md` — structure reference for memory files
-- `scripts/validate.py` — Python 3 validator for memory files
+- `CHANGELOG.md` — semver-tracked release notes
+- `CONTRIBUTING.md` — how to propose protocol, entry-point, or tooling changes
+- `install.sh` — one-line installer (`curl … | bash`)
+- `memory/` — this repo's own memory (self-describing)
 - `template/memory/` — blank starter files for new projects
+- `examples/` — three worked memory states (web app, CLI, library)
+- `scripts/validate.py` — Python 3 stdlib validator; supports `validate.py [memory_dir]`
+- `tests/test_validate.py` — 16-test unittest suite for the validator
+- `schemas/decision.schema.json` + `schemas/drift.schema.json` — JSON schemas for log entries
 - `.claude/settings.json` + `.claude/hooks/session-start.sh` — SessionStart hook for Claude Code on the web
+- `.github/workflows/validate.yml` — CI: runs validator on root, template, and every example, plus the test suite
+- `.pre-commit-hooks.yaml` — pre-commit integration for downstream projects
 
 ## Data flow
 
 1. Agent session starts.
 2. (Optional, web sessions) `.claude/hooks/session-start.sh` runs `scripts/validate.py` to confirm memory files are well-formed.
-3. Agent reads its entry point (`replit.md` or `CLAUDE.md`) → `MEMORY_PROTOCOL.md` → `memory/architecture.md` → `memory/progress.md` → tail of `decisions.jsonl` → tail of `drift.jsonl`.
+3. Agent reads its entry point (`replit.md`, `CLAUDE.md`, or `AGENTS.md`) → `MEMORY_PROTOCOL.md` → `memory/architecture.md` → `memory/progress.md` → tail of `decisions.jsonl` → tail of `drift.jsonl`.
 4. Agent emits the confirmation line from protocol section 10.
 5. Agent performs work; appends decision/drift entries as events occur.
 6. At session end, agent updates `architecture.md` and `progress.md` if anything material changed; runs `scripts/validate.py`.
+7. CI re-validates on every push and PR.
 
 ## External dependencies
 
-None. Python 3 (stdlib only) is required to run the validator; no third-party packages, no network calls, no databases.
+None at runtime. Python 3.10+ (stdlib only) is required to run the validator. GitHub Actions provides CI. No third-party Python packages, no network calls outside install.
 
 ## Conventions
 
@@ -44,3 +50,5 @@ None. Python 3 (stdlib only) is required to run the validator; no third-party pa
 - Secrets referenced by name only, never value.
 - Keep `architecture.md` under 200 lines, `progress.md` under 100 lines.
 - New projects copy from `template/memory/`, never from the repo's own `memory/`.
+- Validator must stay stdlib-only; no third-party Python deps allowed.
+- Protocol changes bump the `Protocol version` header and add a `CHANGELOG.md` entry.

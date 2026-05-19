@@ -1,5 +1,7 @@
 # Memory Protocol
 
+Protocol version: 0.2.0
+
 You are a coding agent working on a long-lived project. Your context window is short. The project is not. This protocol gives you a persistent memory so you do not forget, drift, or rewrite what already exists.
 
 You MUST follow this protocol. It is not optional. It overrides default behaviors when in conflict.
