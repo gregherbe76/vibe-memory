@@ -53,6 +53,19 @@ Set `"author":"lovable"` on every entry you append to `decisions.jsonl` or `drif
 
 Never log secret values in `memory/`. Reference by name only (e.g. `STRIPE_SECRET_KEY`, `DATABASE_URL`).
 
+## Validation surface
+
+The machine-readable contract is enforced, not theoretical. Before writing entries, know that the following will check them:
+
+- `scripts/validate.py` — checks every line of `decisions.jsonl` and `drift.jsonl` is valid JSON, has required fields, valid `type`/`severity`, ISO-8601 timestamps; checks line caps on `architecture.md` (200) and `progress.md` (100). Exit 0 / 1.
+- `schemas/decision.schema.json` + `schemas/drift.schema.json` — JSON Schema Draft 2020-12. Usable by any standard schema validator (ajv, python-jsonschema, etc.) independent of `validate.py`.
+- `.pre-commit-hooks.yaml` — exposes `vibe-memory-validate` as a pre-commit hook so malformed entries are rejected at commit time.
+- `.github/workflows/validate.yml` — CI runs the validator on every push and PR.
+- `.claude/hooks/session-start.sh` — Claude Code on the web runs the validator at session start.
+- `tests/test_validate.py` — 22 unit tests on the validator itself.
+
+If you write an entry that fails any of these checks, you will be caught — by the pre-commit hook locally, by CI in the PR, or by the session-start hook on the next Claude Code session. Write valid entries the first time.
+
 ## Recommended Core snippet for `mem://index.md`
 
 Lovable's protocol adherence depends on the agent's discipline. To make it harder to skip, set the following at the top of `mem://index.md` (short, imperative, hard to miss):
