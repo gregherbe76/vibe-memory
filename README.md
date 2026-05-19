@@ -4,13 +4,28 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Protocol version](https://img.shields.io/badge/protocol-v0.3.0-informational)](MEMORY_PROTOCOL.md)
 
-A memory protocol for vibe coding agents. Persistent memory for coding agents — across sessions, across agents, across months.
+**A continuity layer for AI-built projects.** Persistent memory for Claude Code, Cursor, Lovable, Replit Agent — across sessions, across agents, across months.
+
+> Without continuity, the human becomes the project's memory system. vibe-memory takes that load off.
 
 Works with Replit Agent, Claude Code, Lovable, Cursor, Aider, Codex, OpenHands, and any agent that reads instruction files from the repo.
 
+## The moment that pays for it
+
+You decided to drop Prisma a month ago. Today the agent is about to re-add it. With vibe-memory, this happens **before** the import goes in:
+
+```
+⚠️  Conflicting decision detected
+    2026-03-12 — dependency: dropped Prisma in favor of Drizzle
+    Reason: serverless cold starts on Neon
+    Confirm reversal? (y/N)
+```
+
+No silent regression. No "wait why does this still use Prisma?" three weeks later. That's the protocol's most visible value — see section 4 of `MEMORY_PROTOCOL.md`.
+
 ## How it works
 
-The agent reads `MEMORY_PROTOCOL.md` and an entry-point file for its runtime (`replit.md`, `CLAUDE.md`, `lovable.md`, or `AGENTS.md`) at the start of every session. It logs decisions, detects drift, tracks progress. No CLI, no package, no MCP. Just files.
+The agent reads `MEMORY_PROTOCOL.md` and an entry-point file for its runtime (`replit.md`, `CLAUDE.md`, `lovable.md`, or `AGENTS.md`) at the start of every session. It logs structural decisions, detects drift, tracks progress, and stops itself when about to contradict a logged choice. No CLI, no package, no MCP. Just files.
 
 ## When is this worth it?
 
@@ -139,6 +154,32 @@ The included `.claude/settings.json` registers a SessionStart hook that runs the
 ## Multi-agent
 
 Each entry in `decisions.jsonl` and `drift.jsonl` carries an `author` field. When more than one agent works on a project (e.g. Claude Code reviewing what Cursor wrote), each agent treats the other's entries as authoritative and logs a `rollback` entry if it needs to reverse a prior decision. See `MEMORY_PROTOCOL.md` section 8.
+
+## FAQ
+
+### Why not an MCP memory server?
+
+MCP servers do **retrieval** — semantic search over large context, embeddings, knowledge graphs. vibe-memory does **continuity** — making sure architectural decisions survive sessions and that the agent doesn't silently contradict them. The two are complementary: use both if you need both. vibe-memory's territory is portability, auditability, git-native, visible anti-drift, zero infra.
+
+### Why not just a `CLAUDE.md` / `.cursorrules`?
+
+Those store **rules** (preferences, conventions, "never use X"). vibe-memory stores **events** — decisions with timestamps, drift detected, progression over time. The two are complementary. On Lovable specifically the boundary is explicit: `mem://` = rules, `memory/` = journal (see `lovable.md`).
+
+### Is this just ADRs (Architecture Decision Records)?
+
+ADRs are a format written by humans, for humans, often after the fact. vibe-memory is the same idea **operationalized** for AI coding: machine-readable (JSONL + JSON Schema), written by the agent during the session, re-read by the agent at every future session. ADRs informed the design; vibe-memory is what you get when the audience changes from human reviewer to coding agent.
+
+### Will the agent actually follow the protocol?
+
+Frontier models (Claude 4.x, GPT-5, etc.) follow structured instructions reliably. The validator catches malformed entries (CI blocks, pre-commit rejects). The section 10 recap shows you in real time whether the agent read the memory. For substantive adherence to logged decisions, the loop closes when you skim the log periodically (the `--check-freshness` flag warns when you've stopped).
+
+### How does it scale?
+
+Manual compression when `decisions.jsonl` exceeds 500 lines (protocol section 7). On Lovable, that section is skipped because `chat_search` provides retrieval natively. For semantic search over a very large log, pair vibe-memory with an MCP memory server — vibe-memory writes the truth, MCP indexes it.
+
+### What about token cost?
+
+Tiered reading (protocol section 1). On a typo-fix session, the agent reads only `architecture.md` + `progress.md` (~200 tokens). On a structural session, also the tails of `decisions.jsonl` + `drift.jsonl` (~800-1500 tokens). Compared to a manual re-briefing or a regression to fix, it's negligible.
 
 ## License
 
