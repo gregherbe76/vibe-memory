@@ -1,0 +1,2 @@
+{"timestamp":"2026-04-12T08:55:00Z","type":"drift","severity":"medium","detected":"inline Drizzle query in app/(app)/billing/page.tsx violates 'all DB writes go through lib/db/'","location":"app/(app)/billing/page.tsx:34","suggested_action":"extract to lib/db/billing.ts"}
+{"timestamp":"2026-04-20T13:11:00Z","type":"drift","severity":"low","detected":"new shadcn component edited in place instead of regenerated","location":"components/ui/button.tsx","suggested_action":"regenerate via shadcn CLI and apply changes via wrapper component"}

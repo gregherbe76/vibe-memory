@@ -1,5 +1,7 @@
 # Memory Protocol
 
+Protocol version: 0.3.0
+
 You are a coding agent working on a long-lived project. Your context window is short. The project is not. This protocol gives you a persistent memory so you do not forget, drift, or rewrite what already exists.
 
 You MUST follow this protocol. It is not optional. It overrides default behaviors when in conflict.
@@ -10,20 +12,40 @@ At the start of every session, BEFORE writing or modifying any code, you MUST re
 
 1. `memory/architecture.md` — the current state of the system
 2. `memory/progress.md` — what is done, what is in flight, what is next
+
+These two are always required. They are small, current-state files; the cost is negligible.
+
+For sessions that touch architecture, dependencies, schemas, conventions, or any change spanning more than one file, also read:
+
 3. The last 20 entries of `memory/decisions.jsonl` — recent architectural decisions
 4. The last 10 entries of `memory/drift.jsonl` — recent detected drifts
 
-If any of these files is missing, create it empty with the structure defined in `memory/README.md`. Do not skip this step.
+For trivial sessions (typo fix, copy change, isolated CSS tweak, single-line bug fix), you may skip steps 3 and 4. You still emit the section 10 confirmation line in the form that reflects what you read.
+
+If any of these files is missing, create it empty with the structure defined in `memory/README.md`. Do not skip step 1 or 2.
 
 ## 2. Decisions are append-only events
 
-Every time you make or apply an architectural choice that affects more than one file, append one line to `memory/decisions.jsonl`. One JSON object per line. Format:
+Log on **structural events**, not on every multi-file change. A structural event is something that changes the shape of the project — what it depends on, how it's deployed, what patterns it follows. Trigger a log entry when any of the following happens:
+
+- New external integration is activated (payments, auth, AI gateway, analytics, monitoring)
+- Database migration: new table, column with semantic meaning, RLS policy, function, index strategy
+- New secret added (logged by name only, never value)
+- New runtime dependency added (npm, pip, cargo, gem, etc.) — include version
+- First instance of a new architectural pattern (first server function, first authenticated route, first background job, first feature flag)
+- Deployment target change (host, region, runtime version)
+- Stack swap (one framework / ORM / library replaced by another)
+- Reversal of a prior decision (use `type: "rollback"` referencing the original timestamp)
+
+Do **not** log on: a new content page, a new button, a colour change, a typo fix, copy edits, isolated styling tweaks. Touching multiple files alone is not enough; the change must reshape the project's structure or dependencies.
+
+Format — one JSON object per line:
 
 {"timestamp":"ISO-8601","type":"decision","component":"<area>","change":"<what>","reason":"<why>","impact":["<file_or_module>"],"author":"agent"}
 
 Valid type values: decision, constraint, convention, dependency, rollback.
 
-Never edit existing entries. Never delete them. If a decision is reversed, append a new entry with type "rollback" referencing the original timestamp.
+Never edit existing entries. Never delete them.
 
 ## 3. Architecture is the single source of truth
 
@@ -38,7 +60,20 @@ Sections required:
 - External dependencies — APIs, databases, services
 - Conventions — naming, file structure, testing, error handling
 
-## 4. Drift detection is mandatory
+## 4. Anti-drift in real time (BEFORE the change)
+
+You MUST NOT silently override a logged decision. Before writing or modifying code that would contradict any entry in the last 50 decisions, STOP and:
+
+1. Quote the conflicting decision in your reply (timestamp, change, reason).
+2. Ask the user to confirm the reversal explicitly.
+3. If the user confirms, append a `type: "rollback"` entry referencing the original timestamp BEFORE making the change.
+4. If the user declines, do not make the change.
+
+A "contradiction" means: re-adding a dependency that was removed, re-introducing a pattern that was rejected, swapping a stack choice that was logged, breaking a convention listed in `architecture.md`, or any action that reverses a `decision`, `constraint`, `convention`, or `dependency` entry. Touching unrelated areas is not a contradiction.
+
+This is the most visible value of the protocol to the user. Skipping it defeats the purpose.
+
+## 4.5. Drift detection (AFTER the change)
 
 Before you finish any task, run a drift check. Compare what you just did against memory/architecture.md and the last 10 decisions. If you detect any of the following, append an entry to memory/drift.jsonl:
 
@@ -92,10 +127,52 @@ If this protocol conflicts with a user instruction, follow the user. Then log th
 
 If a memory file is corrupted (unparseable JSON, malformed markdown), stop. Report it to the user. Do not attempt automatic repair.
 
-## 10. Confirm at session start
+## 10. Memory recap (when to surface it)
 
-At the start of each session, after reading the memory files, output exactly one line confirming you have done so:
+The 3-line memory recap is the protocol's most visible signal to the user — it makes the difference between "trust the agent" and "see the agent working". Surface it at every "context reset" moment:
 
+1. **First reply of a fresh session** (always, mandatory).
+2. **After an idle gap of more than ~15 minutes** — the user has likely lost local context and is returning. Re-surface the recap as the first line of your next reply.
+3. **After a context compaction** — the system has summarized prior messages; the user may need re-orientation.
+4. **On explicit user request** — e.g. `/context`, "where are we?", "remind me", "status?", "what was I doing?". Treat these as immediate recap requests, regardless of session position.
+5. **When you re-read memory files mid-session** (e.g. because the user mentions an architectural concept you don't recall) — re-emit the recap so the user knows you've refreshed.
+
+Format (exactly 3 lines, no more):
+
+```
 [memory] read architecture, progress, last 20 decisions, last 10 drifts.
+Stack: <2-3 key stack/convention items from architecture.md>
+In flight: <top in-progress item from progress.md>. Open drift: <most recent unresolved drift, or "none">.
+```
 
-If you cannot output this line truthfully, you have not followed the protocol. Go back to step 1.
+Example:
+
+```
+[memory] read architecture, progress, last 20 decisions, last 10 drifts.
+Stack: Next.js 15 + Drizzle on Neon + Tailwind/shadcn. Convention: all DB writes through lib/db/.
+In flight: checkout v2 (Stripe Elements). Open drift: inline Drizzle in app/(app)/billing/page.tsx.
+```
+
+For trivial sessions (typo fix, copy change), use this shorter variant once at session start:
+
+```
+[memory] read architecture, progress (trivial session, skipped decisions/drift tails).
+```
+
+If you cannot output one of these recaps truthfully at a trigger point, you have not followed the protocol. Go back to step 1.
+
+## 11. Recap before stopping (session-end summary)
+
+Before ending a session — when handing back to the user, before going idle, or before any acknowledged stopping point — surface a 3 to 5 line recap so the user can pick up later without scrolling:
+
+```
+[session end]
+- Changed: <files touched this session, grouped>
+- Logged: <decisions appended (count + brief), drifts noted (count + brief)>
+- Next: <top item from progress.md "Next">
+- Open question: <anything blocking, or "none">
+```
+
+This is the moment the user is most likely to come back later. The recap is what they will see when they reopen the session, more than the code diff. Skipping it forces them to scroll the whole conversation to remember where things stood.
+
+If the session was trivial and nothing material changed, you may skip the end-of-session recap. Use judgment, the same as for memory updates.

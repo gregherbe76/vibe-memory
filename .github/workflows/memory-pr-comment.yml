@@ -1,0 +1,47 @@
+name: memory-pr-comment
+
+on:
+  pull_request:
+    paths:
+      - 'memory/**'
+      - '.github/workflows/memory-pr-comment.yml'
+      - 'scripts/pr_comment.py'
+
+permissions:
+  pull-requests: write
+  contents: read
+
+jobs:
+  comment:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout head
+        uses: actions/checkout@v4
+        with:
+          path: head
+
+      - name: Checkout base
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: base
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Build comment body
+        id: build
+        run: |
+          python3 head/scripts/pr_comment.py base head > comment.md
+          {
+            echo 'body<<EOF'
+            cat comment.md
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Upsert PR comment
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: vibe-memory
+          message: ${{ steps.build.outputs.body }}

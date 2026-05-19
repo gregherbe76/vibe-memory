@@ -1,0 +1,7 @@
+- id: vibe-memory-validate
+  name: vibe-memory validate
+  description: Validate memory/ files (architecture.md, progress.md, decisions.jsonl, drift.jsonl)
+  entry: python3 scripts/validate.py
+  language: system
+  pass_filenames: false
+  files: ^memory/

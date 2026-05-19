@@ -1,9 +1,9 @@
 # Examples
 
-This folder contains example "filled" memory states to help new users understand what a real project's memory looks like in operation.
+Worked memory states for three common project shapes. Look at these when you want to see what well-formed entries look like in context.
 
-## self-describing/
+- `web-app/` — a Next.js + Postgres SaaS midway through building checkout
+- `cli/` — a Rust CLI tool with one shipped release and a feature in flight
+- `library/` — a Python library with a documented API contract and a deprecation in progress
 
-The memory files as they would be filled if the protocol described itself — i.e., what the agent generates when asked to document the vibe-memory repo as its own project. Useful as a reference for what well-formed memory entries look like.
-
-These are illustrative only. Your project's actual `memory/` folder should describe YOUR project, not the protocol.
+These are illustrative. Your project's actual `memory/` should describe **your** project — copy the blank starter from `template/memory/`, not from here.
