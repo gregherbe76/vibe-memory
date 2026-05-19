@@ -6,7 +6,7 @@ All notable changes to vibe-memory are documented here. Format follows [Keep a C
 
 ### Added
 - **Real-time anti-drift (protocol section 4)** — agent MUST stop and ask for confirmation before writing code that contradicts any entry in the last 50 decisions. Cannot silently override a logged decision. This is the protocol's most visible value to users.
-- **Session-start recap (protocol section 10)** — first reply must be a 3-line recap covering stack, in-flight item, and open drift. Makes memory visible at the moment the user is most likely to need it.
+- **Memory recap (protocol section 10)** — 3-line recap covering stack, in-flight item, and open drift. Triggers at every context reset: fresh session, idle > 15 min, after compaction, on explicit user request (`/context`, "where are we", etc.), or when memory is re-read mid-session.
 - **Session-end recap (protocol section 11, new)** — before stopping, agent surfaces a 3-5 line summary: changed, logged, next, open question. Lets the user pick up later without scrolling.
 - **Mono-file mode** — `template/vibememory.md` is a single self-contained file with the lite protocol + memory tables. Install via `install.sh --mode mono`. Upgrade path to full mode preserved.
 - **PR-comment GitHub Action** — `.github/workflows/memory-pr-comment.yml` posts a sticky comment summarizing decisions and drifts added in each PR. Backed by `scripts/pr_comment.py` (3 unit tests).

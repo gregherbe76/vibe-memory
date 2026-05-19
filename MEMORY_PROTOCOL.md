@@ -127,9 +127,15 @@ If this protocol conflicts with a user instruction, follow the user. Then log th
 
 If a memory file is corrupted (unparseable JSON, malformed markdown), stop. Report it to the user. Do not attempt automatic repair.
 
-## 10. Confirm at session start (with recap)
+## 10. Memory recap (when to surface it)
 
-Your first reply in any non-trivial session MUST include a 3-line memory recap. This makes the protocol visible to the user — they see that the agent is reading and using the memory, which is the difference between "trust the agent" and "see the agent working".
+The 3-line memory recap is the protocol's most visible signal to the user — it makes the difference between "trust the agent" and "see the agent working". Surface it at every "context reset" moment:
+
+1. **First reply of a fresh session** (always, mandatory).
+2. **After an idle gap of more than ~15 minutes** — the user has likely lost local context and is returning. Re-surface the recap as the first line of your next reply.
+3. **After a context compaction** — the system has summarized prior messages; the user may need re-orientation.
+4. **On explicit user request** — e.g. `/context`, "where are we?", "remind me", "status?", "what was I doing?". Treat these as immediate recap requests, regardless of session position.
+5. **When you re-read memory files mid-session** (e.g. because the user mentions an architectural concept you don't recall) — re-emit the recap so the user knows you've refreshed.
 
 Format (exactly 3 lines, no more):
 
@@ -147,13 +153,13 @@ Stack: Next.js 15 + Drizzle on Neon + Tailwind/shadcn. Convention: all DB writes
 In flight: checkout v2 (Stripe Elements). Open drift: inline Drizzle in app/(app)/billing/page.tsx.
 ```
 
-For trivial sessions (typo fix, copy change), use this shorter variant:
+For trivial sessions (typo fix, copy change), use this shorter variant once at session start:
 
 ```
 [memory] read architecture, progress (trivial session, skipped decisions/drift tails).
 ```
 
-If you cannot output one of these recaps truthfully, you have not followed the protocol. Go back to step 1.
+If you cannot output one of these recaps truthfully at a trigger point, you have not followed the protocol. Go back to step 1.
 
 ## 11. Recap before stopping (session-end summary)
 
