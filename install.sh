@@ -48,6 +48,7 @@ copy() {
 copy "MEMORY_PROTOCOL.md"           "MEMORY_PROTOCOL.md"
 copy "replit.md"                    "replit.md"
 copy "CLAUDE.md"                    "CLAUDE.md"
+copy "lovable.md"                   "lovable.md"
 copy "AGENTS.md"                    "AGENTS.md"
 copy "scripts/validate.py"          "scripts/validate.py"
 copy "schemas"                      "schemas"

@@ -12,6 +12,7 @@ No runtime stack. This repository is a documentation-and-convention template (Ma
 - `MEMORY_PROTOCOL.md` — the rules the agent follows every session; semver header
 - `replit.md` — Replit Agent entry point and overrides
 - `CLAUDE.md` — Claude Code entry point and overrides
+- `lovable.md` — Lovable entry point and overrides
 - `AGENTS.md` — generic entry point for agent-agnostic tooling (Cursor, Aider, Codex, OpenHands)
 - `README.md` — human-facing overview, quickstart, badges
 - `LICENSE` — MIT

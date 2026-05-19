@@ -6,9 +6,11 @@
 
 A memory protocol for vibe coding agents. Persistent memory for coding agents — across sessions, across agents, across months.
 
+Works with Replit Agent, Claude Code, Lovable, Cursor, Aider, Codex, OpenHands, and any agent that reads instruction files from the repo.
+
 ## How it works
 
-The agent reads `MEMORY_PROTOCOL.md` and an entry-point file for its runtime (`replit.md`, `CLAUDE.md`, or `AGENTS.md`) at the start of every session. It logs decisions, detects drift, tracks progress. No CLI, no package, no MCP. Just files.
+The agent reads `MEMORY_PROTOCOL.md` and an entry-point file for its runtime (`replit.md`, `CLAUDE.md`, `lovable.md`, or `AGENTS.md`) at the start of every session. It logs decisions, detects drift, tracks progress. No CLI, no package, no MCP. Just files.
 
 ## Quickstart
 
@@ -48,7 +50,7 @@ python3 scripts/validate.py
 ## Structure
 
 - `MEMORY_PROTOCOL.md` — the rules the agent follows (versioned, semver)
-- `replit.md`, `CLAUDE.md`, `AGENTS.md` — runtime-specific entry points
+- `replit.md`, `CLAUDE.md`, `lovable.md`, `AGENTS.md` — runtime-specific entry points
 - `memory/` — this repo's own memory; self-describes vibe-memory
 - `template/memory/` — blank starter files for new projects
 - `examples/` — three worked memory states (web app, CLI, library)
