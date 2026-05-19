@@ -4,7 +4,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Protocol version](https://img.shields.io/badge/protocol-v0.2.0-informational)](MEMORY_PROTOCOL.md)
 
-A memory protocol for vibe coding agents. Give your Replit Agent, Claude Code, Cursor, Aider, or any other coding agent a persistent memory in 30 seconds.
+A memory protocol for vibe coding agents. Persistent memory for coding agents — across sessions, across agents, across months.
 
 ## How it works
 
