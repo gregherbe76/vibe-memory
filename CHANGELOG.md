@@ -9,8 +9,9 @@ All notable changes to vibe-memory are documented here. Format follows [Keep a C
 - `CLAUDE.md` — Claude Code entry point mirroring `replit.md`
 - `lovable.md` — Lovable entry point (positions `mem://` as a cache of `memory/`)
 - `AGENTS.md` — generic entry point for agent-agnostic tooling
-- `scripts/validate.py` — Python 3 stdlib-only validator for `memory/` files
-- `tests/test_validate.py` — 16-test suite for the validator
+- `scripts/validate.py` — Python 3 stdlib-only validator for `memory/` files; `--check-freshness DAYS` flag
+- `scripts/render.py` — renders JSONL logs into a chronological markdown journal
+- `tests/test_validate.py` — 22-test suite covering validator + renderer
 - `.github/workflows/validate.yml` — CI running the validator and tests on every push and PR
 - `.claude/hooks/session-start.sh` + `.claude/settings.json` — SessionStart hook for Claude Code on the web that runs the validator
 - `template/memory/` — blank starter files for new projects
@@ -25,8 +26,10 @@ All notable changes to vibe-memory are documented here. Format follows [Keep a C
 - `README.md` expanded with a quickstart, validation section, web-hook section, CI/license badges, and a "When is this worth it?" caveat
 - Repo reorganized: stub starter files moved to `template/memory/`; root `memory/` now self-describes vibe-memory
 - Protocol section 1 split into mandatory tier (architecture + progress) and conditional tier (decisions + drift tails) for trivial sessions
+- Protocol section 2 reframed around **structural events** (integration activation, DB migration, new secret/dep, first instance of a new pattern, deployment target change, stack swap) instead of "≥2 files"
 - Protocol section 10 confirmation line now has a trivial-session variant
 - `scripts/validate.py` gains optional `--check-freshness DAYS` flag (warn-only, soft pressure for stale `progress.md` / `architecture.md`)
+- `lovable.md` carves the `mem://` (rules) vs `memory/` (journal) boundary; documents Lovable-specific structural events (Cloud activation, publish, `secrets--*`, SQL migrations); provides a recommended Core snippet for `mem://index.md`
 
 ### Removed
 - `examples/self-describing/` (content promoted to root `memory/`)

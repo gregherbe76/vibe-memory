@@ -14,7 +14,8 @@ Nothing. v0.2.0 polish session completed.
 
 ## Completed (last 10)
 
-- 2026-05-19 — Lovable self-assessment response: lovable.md mem:// positioning, tiered reading in protocol, --check-freshness flag, README caveat
+- 2026-05-19 — Lovable round 2: protocol section 2 reframed to structural events; lovable.md expanded with mem://↔memory/ boundary, Lovable events (Cloud, publish, secrets, SQL), Core snippet; added scripts/render.py; rejected per-runtime branch split
+- 2026-05-19 — Lovable round 1: lovable.md mem:// positioning, tiered reading in protocol, --check-freshness flag, README caveat
 - 2026-05-19 — Added lovable.md entry point
 - 2026-05-19 — Added AGENTS.md, CONTRIBUTING.md, CHANGELOG.md, protocol version header
 - 2026-05-19 — Added install.sh, .pre-commit-hooks.yaml, JSON schemas, examples/{web-app,cli,library}

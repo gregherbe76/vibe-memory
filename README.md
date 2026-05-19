@@ -71,6 +71,7 @@ python3 scripts/validate.py
 - `template/memory/` — blank starter files for new projects
 - `examples/` — three worked memory states (web app, CLI, library)
 - `scripts/validate.py` — Python 3 stdlib validator
+- `scripts/render.py` — render `decisions.jsonl` + `drift.jsonl` into a human-readable markdown journal
 - `schemas/` — JSON schemas for decision and drift entries
 - `tests/` — unittest suite for the validator
 - `.claude/` — SessionStart hook + settings for Claude Code on the web
@@ -91,7 +92,17 @@ Exit code 0 on success, 1 on any issue.
 ```sh
 python3 scripts/validate.py                    # validate ./memory
 python3 scripts/validate.py path/to/memory     # validate a specific dir
+python3 scripts/validate.py --check-freshness 30   # warn if progress/architecture stale
 python3 -m unittest discover -s tests          # run the validator's own tests
+```
+
+## Reading the journal
+
+JSONL is the source of truth; if you'd rather read a chronological markdown view, render it:
+
+```sh
+python3 scripts/render.py                      # to stdout
+python3 scripts/render.py --output JOURNAL.md  # to a file
 ```
 
 ## Pre-commit hook

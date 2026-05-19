@@ -22,7 +22,8 @@ No runtime stack. This repository is a documentation-and-convention template (Ma
 - `memory/` — this repo's own memory (self-describing)
 - `template/memory/` — blank starter files for new projects
 - `examples/` — three worked memory states (web app, CLI, library)
-- `scripts/validate.py` — Python 3 stdlib validator; supports `validate.py [memory_dir]`
+- `scripts/validate.py` — Python 3 stdlib validator; supports `validate.py [memory_dir] [--check-freshness DAYS]`
+- `scripts/render.py` — renders JSONL logs into a chronological markdown journal (derived view; JSONL stays source of truth)
 - `tests/test_validate.py` — 16-test unittest suite for the validator
 - `schemas/decision.schema.json` + `schemas/drift.schema.json` — JSON schemas for log entries
 - `.claude/settings.json` + `.claude/hooks/session-start.sh` — SessionStart hook for Claude Code on the web

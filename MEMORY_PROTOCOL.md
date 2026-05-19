@@ -26,13 +26,26 @@ If any of these files is missing, create it empty with the structure defined in 
 
 ## 2. Decisions are append-only events
 
-Every time you make or apply an architectural choice that affects more than one file, append one line to `memory/decisions.jsonl`. One JSON object per line. Format:
+Log on **structural events**, not on every multi-file change. A structural event is something that changes the shape of the project — what it depends on, how it's deployed, what patterns it follows. Trigger a log entry when any of the following happens:
+
+- New external integration is activated (payments, auth, AI gateway, analytics, monitoring)
+- Database migration: new table, column with semantic meaning, RLS policy, function, index strategy
+- New secret added (logged by name only, never value)
+- New runtime dependency added (npm, pip, cargo, gem, etc.) — include version
+- First instance of a new architectural pattern (first server function, first authenticated route, first background job, first feature flag)
+- Deployment target change (host, region, runtime version)
+- Stack swap (one framework / ORM / library replaced by another)
+- Reversal of a prior decision (use `type: "rollback"` referencing the original timestamp)
+
+Do **not** log on: a new content page, a new button, a colour change, a typo fix, copy edits, isolated styling tweaks. Touching multiple files alone is not enough; the change must reshape the project's structure or dependencies.
+
+Format — one JSON object per line:
 
 {"timestamp":"ISO-8601","type":"decision","component":"<area>","change":"<what>","reason":"<why>","impact":["<file_or_module>"],"author":"agent"}
 
 Valid type values: decision, constraint, convention, dependency, rollback.
 
-Never edit existing entries. Never delete them. If a decision is reversed, append a new entry with type "rollback" referencing the original timestamp.
+Never edit existing entries. Never delete them.
 
 ## 3. Architecture is the single source of truth
 

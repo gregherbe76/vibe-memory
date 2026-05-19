@@ -188,5 +188,31 @@ class ValidateTests(unittest.TestCase):
         self.assertEqual(cm.exception.code, 0)
 
 
+class RenderTests(unittest.TestCase):
+    def test_render_produces_markdown_with_decisions_and_drifts(self):
+        import render  # noqa: WPS433
+        with TemporaryDirectory() as d:
+            mem = write_memory(
+                Path(d),
+                decisions=VALID_DECISION + "\n",
+                drift=VALID_DRIFT + "\n",
+            )
+            out = render.render(mem)
+        self.assertIn("# Memory journal", out)
+        self.assertIn("1 decision(s)", out)
+        self.assertIn("1 drift(s)", out)
+        self.assertIn("**decision**", out)
+        self.assertIn("**drift**", out)
+        self.assertIn("2026-05-19", out)
+
+    def test_render_handles_empty_memory(self):
+        import render
+        with TemporaryDirectory() as d:
+            mem = write_memory(Path(d))
+            out = render.render(mem)
+        self.assertIn("0 decision(s)", out)
+        self.assertIn("0 drift(s)", out)
+
+
 if __name__ == "__main__":
     unittest.main()
