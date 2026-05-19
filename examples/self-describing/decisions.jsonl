@@ -1,1 +1,0 @@
-{"timestamp":"2026-05-18T13:34:27Z","type":"convention","component":"meta","change":"installed vibe-memory protocol","reason":"persistent memory across sessions, drift detection, decision audit trail","impact":["MEMORY_PROTOCOL.md","replit.md","memory/"],"author":"agent"}
