@@ -19,6 +19,8 @@ Output the confirmation line specified in section 10 of the protocol.
 - Multi-agent attribution — Set `"author":"claude-code"` on every entry you append to `decisions.jsonl` or `drift.jsonl`. If another agent (e.g. `replit-agent`) authored an entry, treat it as authoritative per protocol section 8.
 - Tool use — Do not bypass the protocol when invoking tools. Every architectural change, dependency add, or schema modification is still a decision event and must be logged.
 - Validation — A `scripts/validate.py` script is shipped with this protocol. Run it before ending the session (`python3 scripts/validate.py`) to catch malformed entries early. CI / SessionStart hooks may run it automatically.
+- Prompt caching — When calling the Anthropic API directly, mark the memory read with `cache_control: {type: "ephemeral"}`. Memory files do not change between turns, so cached reads pay ~10% of the original cost (protocol section 7.1).
+- Cost offloading — Optional: route memory writes to a cheaper model via `scripts/memory_assistant.py` (protocol section 7.2). Anti-drift must stay on the frontier model.
 - Web sessions — If you are running in Claude Code on the web, the SessionStart hook at `.claude/hooks/session-start.sh` validates memory files for you. You still must read them per section 1.
 - Secrets — Never log secret values in memory/. Reference them by name only (e.g. `STRIPE_SECRET_KEY`), never the value.
 

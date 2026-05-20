@@ -2,6 +2,26 @@
 
 All notable changes to vibe-memory are documented here. Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning follows [SemVer](https://semver.org/).
 
+## [0.4.0] — 2026-05-19
+
+Cost-optimization release. Stacking the five levers documented here can reduce AI cost by 50-75% on a long-running project.
+
+### Added
+- **Protocol section 7.1 — Prompt caching** — recommended convention: mark the memory read as cacheable on Anthropic / OpenAI APIs. Memory files do not change between turns; cached reads pay ~10% of the original cost. Single biggest cost lever for direct API users.
+- **Protocol section 7.2 — Cheap-model offloading** — memory writes don't require frontier intelligence. Documents which operations can be offloaded (entries, recaps, summaries) and which must stay on the main model (anti-drift, code, architecture).
+- **`scripts/memory_assistant.py`** — optional companion script that routes memory operations to any OpenAI-compatible chat completions endpoint (Groq, Together, Fireworks, OpenRouter, Ollama, Anthropic, OpenAI). Subcommands: `recap` (deterministic by default, no LLM needed), `decision-entry`, `drift-entry`. Pure stdlib (`urllib`).
+- **`scripts/compress.py`** — optional companion script implementing protocol section 7 automatically. Summarizes oldest entries into `decisions-archive-<date>.md`, replaces them with a single `archive` entry. `--dry-run`, `--keep`, `--threshold` flags. Uses the same `VIBEMEM_LLM_*` env vars as `memory_assistant.py`.
+- **README "Cost optimization" section** — explicit 5-lever stack with sample math, code snippets, and a savings table.
+- **8 new tests** (33 total) — covering deterministic recap, JSON extraction from noisy LLM responses, LLM env-var requirement, compress dry-run behavior.
+
+### Changed
+- `CLAUDE.md` documents prompt caching as a Claude-specific cost note.
+- Protocol version header: 0.3.0 → 0.4.0
+
+### Notes
+- `memory_assistant.py` and `compress.py` are **optional companions**. The protocol stays portable, files-only, no-infra by default. These scripts are for heavy users who want to optimize.
+- Anti-drift (protocol section 4) **must** stay on the main frontier model. It is the one operation that requires real reasoning. Offloading it would defeat the protocol's most valuable feature.
+
 ## [0.3.0] — 2026-05-19
 
 ### Added

@@ -1,7 +1,7 @@
 # Architecture
 
 Last updated: 2026-05-19
-Current version: 0.3.0
+Current version: 0.4.0
 
 ## Stack
 
@@ -25,6 +25,8 @@ No runtime stack. This repository is a documentation-and-convention template (Ma
 - `scripts/validate.py` — Python 3 stdlib validator; supports `validate.py [memory_dir] [--check-freshness DAYS]`
 - `scripts/render.py` — renders JSONL logs into a chronological markdown journal (derived view; JSONL stays source of truth)
 - `scripts/pr_comment.py` — produces a markdown PR comment diffing memory between two refs
+- `scripts/memory_assistant.py` — optional v0.4 companion: routes memory writes (entries, recaps) to a cheap LLM via any OpenAI-compatible endpoint
+- `scripts/compress.py` — optional v0.4 companion: auto-implements protocol section 7 (archive old entries via cheap LLM)
 - `template/vibememory.md` — single-file mono-mode starter (lite protocol + memory in one file)
 - `.github/workflows/memory-pr-comment.yml` — posts a sticky PR comment summarizing memory changes
 - `tests/test_validate.py` — 16-test unittest suite for the validator

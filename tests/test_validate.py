@@ -4,6 +4,8 @@ Run with: python3 -m unittest tests.test_validate
 """
 from __future__ import annotations
 
+import json
+import os
 import sys
 import unittest
 from pathlib import Path
@@ -243,6 +245,95 @@ class RenderTests(unittest.TestCase):
             out = render.render(mem)
         self.assertIn("0 decision(s)", out)
         self.assertIn("0 drift(s)", out)
+
+
+class MemoryAssistantTests(unittest.TestCase):
+    def test_deterministic_recap_with_full_memory(self):
+        import memory_assistant
+        with TemporaryDirectory() as d:
+            mem = write_memory(
+                Path(d),
+                arch=(
+                    "# Architecture\n\n"
+                    "## Stack\n\n"
+                    "- Next.js 15 + Drizzle on Neon\n"
+                    "- Tailwind + shadcn\n\n"
+                    "## Conventions\n\n"
+                    "- All DB writes through lib/db/\n"
+                ),
+                progress=(
+                    "# Progress\n\n"
+                    "## In progress\n\n"
+                    "- checkout v2 (Stripe Elements)\n"
+                ),
+                drift=(
+                    '{"timestamp":"2026-05-19T00:00:00Z","type":"drift","severity":"medium",'
+                    '"detected":"inline Drizzle in billing/page.tsx",'
+                    '"location":"app/(app)/billing/page.tsx:34",'
+                    '"suggested_action":"extract to lib/db/billing.ts"}\n'
+                ),
+            )
+            recap = memory_assistant.deterministic_recap(mem)
+        self.assertIn("[memory] read architecture", recap)
+        self.assertIn("Next.js 15 + Drizzle", recap)
+        self.assertIn("checkout v2", recap)
+        self.assertIn("inline Drizzle", recap)
+        # exactly 3 lines
+        self.assertEqual(len(recap.splitlines()), 3)
+
+    def test_deterministic_recap_with_empty_memory(self):
+        import memory_assistant
+        with TemporaryDirectory() as d:
+            mem = write_memory(Path(d))
+            recap = memory_assistant.deterministic_recap(mem)
+        self.assertIn("[memory] read", recap)
+        self.assertIn("Open drift: none", recap)
+        self.assertEqual(len(recap.splitlines()), 3)
+
+    def test_extract_json_line_handles_markdown_fence(self):
+        import memory_assistant
+        text = "```json\n{\"a\": 1, \"b\": 2}\n```"
+        out = memory_assistant._extract_json_line(text)
+        self.assertEqual(json.loads(out), {"a": 1, "b": 2})
+
+    def test_extract_json_line_handles_plain_object(self):
+        import memory_assistant
+        out = memory_assistant._extract_json_line('  {"x": 3}  ')
+        self.assertEqual(json.loads(out), {"x": 3})
+
+    def test_extract_json_line_raises_on_no_json(self):
+        import memory_assistant
+        with self.assertRaises(ValueError):
+            memory_assistant._extract_json_line("no JSON here")
+
+    def test_call_llm_requires_env(self):
+        import memory_assistant
+        # Save and clear env to ensure RuntimeError
+        saved = {k: os.environ.pop(k, None) for k in ("VIBEMEM_LLM_ENDPOINT", "VIBEMEM_LLM_MODEL")}
+        try:
+            with self.assertRaises(RuntimeError):
+                memory_assistant.call_llm([{"role": "user", "content": "x"}])
+        finally:
+            for k, v in saved.items():
+                if v is not None:
+                    os.environ[k] = v
+
+
+class CompressTests(unittest.TestCase):
+    def test_compress_skips_below_threshold(self):
+        import compress as compress_mod
+        with TemporaryDirectory() as d:
+            mem = write_memory(Path(d), decisions=VALID_DECISION + "\n")
+            archived, _ = compress_mod.compress(mem, keep=300, threshold=500, dry_run=True)
+        self.assertEqual(archived, 0)
+
+    def test_compress_dry_run_reports_count(self):
+        import compress as compress_mod
+        many = "\n".join(VALID_DECISION for _ in range(10)) + "\n"
+        with TemporaryDirectory() as d:
+            mem = write_memory(Path(d), decisions=many)
+            archived, _ = compress_mod.compress(mem, keep=3, threshold=5, dry_run=True)
+        self.assertEqual(archived, 7)
 
 
 if __name__ == "__main__":

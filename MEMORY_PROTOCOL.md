@@ -1,6 +1,6 @@
 # Memory Protocol
 
-Protocol version: 0.3.0
+Protocol version: 0.4.0
 
 You are a coding agent working on a long-lived project. Your context window is short. The project is not. This protocol gives you a persistent memory so you do not forget, drift, or rewrite what already exists.
 
@@ -116,6 +116,16 @@ When decisions.jsonl exceeds 500 lines, summarize the oldest 200 entries into a 
 Same rule for drift.jsonl at 300 lines.
 
 You only compress when explicitly asked, or when reading the file would exceed your context budget. Do not compress proactively.
+
+Tooling: an optional companion script `scripts/compress.py` performs this archival via a cheap LLM. It is purely additive — running it produces the same archive entry shape this section specifies. The protocol does not require any tooling.
+
+### 7.1. Prompt caching (recommended)
+
+If the runtime supports prompt caching (Anthropic API, OpenAI), mark the memory read as cacheable. The memory files do not change between turns of the same session, so cached reads pay ~10% of the original cost. Subsequent turns in a long session can be 5-10x cheaper this way. This is the single highest-impact cost optimization for direct API users.
+
+### 7.2. Offloading memory operations to a cheap model
+
+Memory writes (decision/drift entries, recap generation, archive summarization) do not require frontier-model intelligence. They can be offloaded to a smaller model (Haiku 4.5, Gemini Flash, Llama 3 on Groq, local Ollama) at 4-60x lower cost without sacrificing correctness. See `scripts/memory_assistant.py` for an optional companion that does this against any OpenAI-compatible endpoint. Anti-drift detection (section 4) must stay on the main frontier model — it requires real reasoning.
 
 ## 8. Multi-agent rules (if applicable)
 
