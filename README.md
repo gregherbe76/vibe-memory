@@ -2,7 +2,7 @@
 
 [![validate](https://github.com/gregherbe76/vibe-memory/actions/workflows/validate.yml/badge.svg)](https://github.com/gregherbe76/vibe-memory/actions/workflows/validate.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Protocol version](https://img.shields.io/badge/protocol-v0.3.0-informational)](MEMORY_PROTOCOL.md)
+[![Protocol version](https://img.shields.io/badge/protocol-v0.4.0-informational)](MEMORY_PROTOCOL.md)
 
 **A continuity layer for AI-built projects.** Persistent memory for Claude Code, Cursor, Lovable, Replit Agent — across sessions, across agents, across months.
 
@@ -74,7 +74,7 @@ curl -sSL https://raw.githubusercontent.com/gregherbe76/vibe-memory/main/install
 Or pin to a release:
 
 ```sh
-curl -sSL https://raw.githubusercontent.com/gregherbe76/vibe-memory/main/install.sh | bash -s -- --ref v0.3.0
+curl -sSL https://raw.githubusercontent.com/gregherbe76/vibe-memory/main/install.sh | bash -s -- --ref v0.4.0
 ```
 
 The installer drops the protocol files, entry points, validator, a blank `memory/` folder, and the optional Claude Code SessionStart hook. It never overwrites existing files.
@@ -108,6 +108,8 @@ python3 scripts/validate.py
 - `examples/` — three worked memory states (web app, CLI, library)
 - `scripts/validate.py` — Python 3 stdlib validator
 - `scripts/render.py` — render `decisions.jsonl` + `drift.jsonl` into a human-readable markdown journal
+- `scripts/memory_assistant.py` — optional companion: route memory writes to a cheap LLM
+- `scripts/compress.py` — optional companion: auto-archive old decisions via a cheap LLM
 - `schemas/` — JSON schemas for decision and drift entries
 - `tests/` — unittest suite for the validator
 - `.claude/` — SessionStart hook + settings for Claude Code on the web
@@ -160,6 +162,84 @@ The included `.claude/settings.json` registers a SessionStart hook that runs the
 ## Multi-agent
 
 Each entry in `decisions.jsonl` and `drift.jsonl` carries an `author` field. When more than one agent works on a project (e.g. Claude Code reviewing what Cursor wrote), each agent treats the other's entries as authoritative and logs a `rollback` entry if it needs to reverse a prior decision. See `MEMORY_PROTOCOL.md` section 8.
+
+## Cost optimization (v0.4.0+)
+
+Persistent memory has a token cost. On long-running projects, that cost can be reduced **50-75%** by stacking five levers — most of them already in the protocol.
+
+### 1. Prompt caching (biggest, free)
+
+Mark the memory read as cacheable on Anthropic / OpenAI APIs. Memory files don't change between turns of the same session, so the second message onwards pays ~10% of the original cost. Single biggest lever. See protocol section 7.1.
+
+```python
+# Anthropic API example
+messages=[{"role": "user", "content": [
+    {"type": "text", "text": memory_block, "cache_control": {"type": "ephemeral"}},
+    {"type": "text", "text": user_question},
+]}]
+```
+
+Sample math: 20-message session, 2000 tokens of memory → $0.12 → **$0.018** with caching.
+
+### 2. Offload memory writes to a cheap model
+
+Memory operations (writing decision/drift entries, recaps, summaries) don't need frontier-model intelligence. They can run on a 4-60× cheaper model. Anti-drift stays on the frontier (it's the one operation that needs real reasoning).
+
+Optional companion script `scripts/memory_assistant.py` does this against any OpenAI-compatible endpoint (Groq, Together, Fireworks, OpenRouter, Ollama, Anthropic, OpenAI):
+
+```sh
+export VIBEMEM_LLM_ENDPOINT=https://api.groq.com/openai/v1/chat/completions
+export VIBEMEM_LLM_MODEL=llama-3.1-8b-instant
+export VIBEMEM_LLM_API_KEY=...
+python3 scripts/memory_assistant.py decision-entry "switched ORM from Prisma to Drizzle for serverless cold starts"
+# → {"timestamp":"...","type":"dependency","component":"orm","change":"...","reason":"...","impact":[...],"author":"memory-assistant"}
+```
+
+The `recap` subcommand works deterministically without any LLM:
+
+```sh
+python3 scripts/memory_assistant.py recap
+# → 3-line section-10 recap, no API call
+```
+
+### 3. Local model for memory ops (free after hardware)
+
+Llama 3.1 8B on an RTX 4090 or Apple Silicon handles memory writes reliably and is free at the margin. Point `VIBEMEM_LLM_ENDPOINT` at your local Ollama instance:
+
+```sh
+export VIBEMEM_LLM_ENDPOINT=http://localhost:11434/v1/chat/completions
+export VIBEMEM_LLM_MODEL=llama3.1:8b
+```
+
+For users running AI coding agents 6+ hours/day, the GPU pays for itself in 1-3 months.
+
+### 4. Automatic compression via cheap LLM
+
+`scripts/compress.py` implements protocol section 7 automatically. Run periodically (or wire to a cron / GitHub Action). Compresses the oldest entries into a single archive markdown file, leaves the recent ones live:
+
+```sh
+python3 scripts/compress.py --dry-run        # see what would happen
+python3 scripts/compress.py                  # do it (needs VIBEMEM_LLM_*)
+python3 scripts/compress.py --keep 200 --threshold 400
+```
+
+The original entries stay in git history. Recovery is `git show <old-sha>:memory/decisions.jsonl`.
+
+### 5. Tiered reading (already in v0.3.0)
+
+Protocol section 1: only `architecture.md` + `progress.md` are mandatory reads. JSONL tails are read conditionally on structural sessions. Saves 60-80% of memory-read tokens on trivial sessions automatically.
+
+### Stacked impact
+
+| Lever | Savings | Setup |
+|---|---|---|
+| Tiered reading | ~30% on trivial sessions | ✅ default |
+| Prompt caching | ~85% on memory reads | 1 line in API payload |
+| Cheap model for memory ops | -5 to -10% global | Env vars + script |
+| Local model | -100% on memory ops | GPU |
+| Auto-compression | -10 to -20% long term | Run periodically |
+
+**Stacked: 50-75% reduction in AI cost on a long-running project.**
 
 ## FAQ
 

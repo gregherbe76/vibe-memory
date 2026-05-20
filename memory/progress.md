@@ -14,6 +14,7 @@ Nothing. v0.2.0 polish session completed.
 
 ## Completed (last 10)
 
+- 2026-05-19 — v0.4.0: cost optimization (protocol §7.1/§7.2 caching+offloading, scripts/memory_assistant.py, scripts/compress.py, README cost section)
 - 2026-05-19 — v0.3.0: real-time anti-drift (section 4), session-start recap (section 10), session-end recap (section 11), mono-file mode (vibememory.md + install --mode mono), PR-comment GitHub Action
 - 2026-05-19 — Lovable round 2: protocol section 2 reframed to structural events; lovable.md expanded with mem://↔memory/ boundary, Lovable events (Cloud, publish, secrets, SQL), Core snippet; added scripts/render.py; rejected per-runtime branch split
 - 2026-05-19 — Lovable round 1: lovable.md mem:// positioning, tiered reading in protocol, --check-freshness flag, README caveat
